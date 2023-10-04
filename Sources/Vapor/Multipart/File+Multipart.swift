@@ -15,7 +15,7 @@ extension File: MultipartPartConvertible {
         guard let filename = multipart.filename else {
             return nil
         }
-        self.init(data: multipart.body, filename: filename)
+        self.init(data: multipart.body, filename: filename, lastModified: Date(timeIntervalSinceReferenceDate: 0))
     }
 }
 
