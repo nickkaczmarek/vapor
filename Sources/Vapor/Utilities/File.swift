@@ -5,7 +5,10 @@ import NIOCore
 public struct File: Codable, Equatable, Sendable {
     /// Name of the file, including extension.
     public var filename: String
-    
+
+    /// The last modified date for the file.
+    public var lastModified: Date
+
     /// The file's data.
     public var data: ByteBuffer
     
@@ -25,7 +28,7 @@ public struct File: Codable, Equatable, Sendable {
     }
     
     enum CodingKeys: String, CodingKey {
-        case data, filename
+        case data, filename, lastModified
     }
     
     /// `Decodable` conformance.
@@ -35,7 +38,9 @@ public struct File: Codable, Equatable, Sendable {
         var buffer = ByteBufferAllocator().buffer(capacity: 0)
         buffer.writeBytes(data)
         let filename = try container.decode(String.self, forKey: .filename)
-        self.init(data: buffer, filename: filename)
+        let lastModifiedUnixTimestamp = try container.decode(Double.self, forKey: .lastModified)
+        let lastModified = Date(timeIntervalSince1970: lastModifiedUnixTimestamp / 1000)
+        self.init(data: buffer, filename: filename, lastModified: lastModified)
     }
     
     /// `Encodable` conformance.
@@ -44,6 +49,7 @@ public struct File: Codable, Equatable, Sendable {
         let data = self.data.getData(at: self.data.readerIndex, length: self.data.readableBytes)
         try container.encode(data, forKey: .data)
         try container.encode(self.filename, forKey: .filename)
+        try container.encode(self.lastModified, forKey: .lastModified)
     }
     
     /// Creates a new `File`.
@@ -53,9 +59,9 @@ public struct File: Codable, Equatable, Sendable {
     /// - parameters:
     ///     - data: The file's contents.
     ///     - filename: The name of the file, not including path.
-    public init(data: String, filename: String) {
+    public init(data: String, filename: String, lastModified: Date) {
         let buffer = ByteBufferAllocator().buffer(string: data)
-        self.init(data: buffer, filename: filename)
+        self.init(data: buffer, filename: filename, lastModified: lastModified)
     }
     
     /// Creates a new `File`.
@@ -65,8 +71,9 @@ public struct File: Codable, Equatable, Sendable {
     /// - parameters:
     ///     - data: The file's contents.
     ///     - filename: The name of the file, not including path.
-    public init(data: ByteBuffer, filename: String) {
+    public init(data: ByteBuffer, filename: String, lastModified: Date) {
         self.data = data
         self.filename = filename
+        self.lastModified = lastModified
     }
 }
